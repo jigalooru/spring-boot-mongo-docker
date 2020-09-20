@@ -1,0 +1,46 @@
+properties([[$class: 'JiraProjectProperty'], buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '5', numToKeepStr: '5')), [$class: 'JobLocalConfiguration', changeReasonComment: ''], pipelineTriggers([pollSCM('* * * * *')])])
+pipeline {
+    agent any 
+    tools {
+    maven 'Maven_Home.3.6.3'
+    }
+
+    stages {
+        stage("scm_checkout") {
+            steps {
+            git credentialsId: 'github_id', url: 'https://github.com/githubjigalooru/spring-boot-mongo-docker.git'
+            }
+        }
+        stage("mvn_package"){
+            steps {
+             sh label: '', script: 'mvn clean package'   
+            }
+        }
+        stage("build_docker_image") {
+            steps {
+                sh label: '', script: 'docker build -t amruth0005/springapp:${BUILD_NUMBER} .'
+             }
+        }
+        stage("push_image_hub") {
+            steps {
+               withCredentials([string(credentialsId: 'dock_pass_ID', variable: 'amr_hub')]) {
+               sh label: '', script: 'docker login -u amruth0005 -p ${amr_hub}'
+               }
+               sh label: '', script: 'docker push amruth0005/springapp:${BUILD_NUMBER}'
+              
+           }
+        }
+        stage("run_container") {
+            steps {
+                sshagent(['dockerswarm']) {
+                sh label: '', script: 'ssh -o StrictHostKeyChecking=no ubuntu@3.6.88.142 docker stop spring_front || true'   
+                sh label: '', script: 'ssh -o StrictHostKeyChecking=no ubuntu@3.6.88.142 docker rm spring_front || true'
+                sh label: '', script: 'ssh -o StrictHostKeyChecking=no ubuntu@3.6.88.142 docker run -d -p 8080:8080 --name spring_front amruth0005/springapp:${BUILD_NUMBER}'
+                    
+                }
+                
+                
+            }
+        }
+    }
+}
