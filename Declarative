@@ -36,6 +36,7 @@ pipeline {
                 sh label: '', script: 'ssh -o StrictHostKeyChecking=no ubuntu@3.6.88.142 docker stop spring_front || true'   
                 sh label: '', script: 'ssh -o StrictHostKeyChecking=no ubuntu@3.6.88.142 docker rm spring_front || true'
                 sh label: '', script: 'ssh -o StrictHostKeyChecking=no ubuntu@3.6.88.142 docker run -d -p 8080:8080 --name spring_front amruth0005/springapp:${BUILD_NUMBER}'
+                sh label: '', script: 'ssh -o StrictHostKeyChecking=no ubuntu@3.6.88.142 docker run -d --name back_end mango'
                     
                 }
                 
